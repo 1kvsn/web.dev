@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Chess Board</title>
+
+    <script>
+      console.log("Inline head script executed at", new Date().toISOString());
+      const loadingEvents = [];
+
+      function addEventToTable(eventName, timestamp) {
+        loadingEvents.push({ name: eventName, time: timestamp });
+        loadingEvents.sort((a, b) => new Date(a.time) - new Date(b.time));
+        const table = document.getElementById("events-table");
+        table.innerHTML = `
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Event</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+        const tbody = table.querySelector("tbody");
+        loadingEvents.forEach((event, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${event.name}</td>
+          <td>${event.time}</td>
+        `;
+          tbody.appendChild(row);
+        });
+      }
+
+      function trackEvent(name) {
+        const mark = `${name}-mark`;
+        performance.mark(mark);
+        const timestamp = new Date().toISOString();
+        addEventToTable(name, timestamp);
+      }
+
+      function logLinkElements() {
+        const links = document.querySelectorAll("link");
+        const table = document.getElementById("links-table");
+        const descriptions = {
+          stylesheet: "CSS to style the page",
+          preconnect: "Establish early connection",
+          "dns-prefetch":
+            "Pre-resolve DNS hostnames for assets later in the page!",
+          preload: "Fetch resource before use",
+          prefetch: "Prefetch asset for a future navigation, place in cache",
+          prerender: "Render future page in background for future navigation",
+          alternate: "Alternate format (e.g. RSS)",
+        };
+
+        table.innerHTML = `
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>rel</th>
+            <th>href</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+        const tbody = table.querySelector("tbody");
+        links.forEach((link, index) => {
+          const rel = link.getAttribute("rel");
+          const desc = descriptions[rel] || "Custom or unknown use";
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${rel}</td>
+          <td>${link.href}</td>
+          <td>${desc}</td>
+        `;
+          tbody.appendChild(row);
+        });
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        trackEvent("DOMContentLoaded");
+        logLinkElements();
+      });
+
+      window.addEventListener("load", () => {
+        trackEvent("Window Load");
+      });
+
+      function trackFontLoaded() {
+        trackEvent("Font loaded");
+      }
+      function trackReactLoaded() {
+        trackEvent("React loaded");
+      }
+      function trackMaterialUiLoaded() {
+        trackEvent("Material-UI loaded");
+      }
+      function trackExternalStylesheetLoaded() {
+        trackEvent("External stylesheet loaded");
+      }
+      function trackHeadScriptLoaded() {
+        trackEvent("Head script loaded");
+      }
+      function trackBodyScriptLoaded() {
+        trackEvent("Body script loaded");
+      }
+    </script>
+
+    <!-- Example <link> elements -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link
+      rel="stylesheet"
+      href="styles.css"
+      onload="trackExternalStylesheetLoaded()"
+    />
+    <link rel="preload" href="styles.css" as="style" />
+    <link rel="prefetch" href="index.html" />
+    <link rel="prerender" href="sequence.html" />
+    <link
+      rel="alternate"
+      href="rss.xml"
+      type="application/rss+xml"
+      title="RSS"
+    />
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+      rel="stylesheet"
+      onload="trackFontLoaded()"
+    />
+
+    <!-- Scripts -->
+    <script
+      async
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      onload="trackReactLoaded()"
+    ></script>
+    <script
+      src="https://unpkg.com/@material-ui/core@latest/umd/material-ui.development.js"
+      onload="trackMaterialUiLoaded()"
+    ></script>
+    <script src="head-script.js" onload="trackHeadScriptLoaded()"></script>
+
+    <!-- CSS -->
+    <style>
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        background: #f0f0f0;
+        margin: 20px;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: auto;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      section {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Chess board styles */
+      .chess-board {
+        width: 400px;
+        height: 400px;
+        margin: 0 auto;
+        border: 2px solid #333;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+      }
+
+      .chess-square {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .chess-square:hover {
+        background-color: rgba(255, 255, 0, 0.3) !important;
+      }
+
+      .white {
+        background-color: #f0d9b5;
+      }
+
+      .black {
+        background-color: #b58863;
+      }
+
+      .selected {
+        background-color: rgba(173, 216, 230, 0.8) !important;
+      }
+
+      .possible-move {
+        position: relative;
+      }
+
+      .possible-move::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: rgba(0, 128, 0, 0.5);
+      }
+
+      .game-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      button {
+        padding: 8px 16px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "Inter", sans-serif;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background: #45a049;
+      }
+
+      .turn-indicator {
+        text-align: center;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+      }
+
+      .event-tracking {
+        margin-top: 40px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f5f5f5;
+      }
+
+      code {
+        background: #f1f3f4;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      .side-note {
+        background: #e7f3fe;
+        border-left: 6px solid #2196f3;
+        padding: 10px;
+        margin: 20px 0;
+      }
+
+      .move-history {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Interactive Chess Board</h1>
+
+      <section>
+        <div class="turn-indicator">
+          Current Turn: <span id="current-turn">White</span>
+        </div>
+        <div class="chess-board" id="chess-board"></div>
+        <div class="game-controls">
+          <button id="reset-game">Reset Game</button>
+          <button id="undo-move">Undo Move</button>
+        </div>
+        <div class="move-history">
+          <h3>Move History</h3>
+          <ul id="move-list"></ul>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      console.log("Inline body script executed at", new Date().toISOString());
+
+      // Chess game logic
+      document.addEventListener("DOMContentLoaded", () => {
+        // Chess pieces represented by Unicode characters
+        const pieces = {
+          whitePawn: "♙",
+          whiteRook: "♖",
+          whiteKnight: "♘",
+          whiteBishop: "♗",
+          whiteQueen: "♕",
+          whiteKing: "♔",
+          blackPawn: "♟",
+          blackRook: "♜",
+          blackKnight: "♞",
+          blackBishop: "♝",
+          blackQueen: "♛",
+          blackKing: "♚",
+        };
+
+        const chessBoard = document.getElementById("chess-board");
+        const moveList = document.getElementById("move-list");
+        const currentTurnElement = document.getElementById("current-turn");
+        let selectedSquare = null;
+        let currentTurn = "white";
+        let boardState = []; // to track piece positions
+        let moveHistory = [];
+
+        // Create the board squares and initialize pieces
+        function initializeBoard() {
+          chessBoard.innerHTML = "";
+          boardState = [];
+
+          for (let row = 0; row < 8; row++) {
+            boardState[row] = [];
+            for (let col = 0; col < 8; col++) {
+              const square = document.createElement("div");
+              square.classList.add("chess-square");
+              square.classList.add((row + col) % 2 === 0 ? "white" : "black");
+              square.dataset.row = row;
+              square.dataset.col = col;
+
+              // Add pieces to their initial positions
+              let piece = null;
+
+              if (row === 1) {
+                piece = {
+                  type: "pawn",
+                  color: "black",
+                  symbol: pieces.blackPawn,
+                };
+              } else if (row === 6) {
+                piece = {
+                  type: "pawn",
+                  color: "white",
+                  symbol: pieces.whitePawn,
+                };
+              } else if (row === 0) {
+                if (col === 0 || col === 7) {
+                  piece = {
+                    type: "rook",
+                    color: "black",
+                    symbol: pieces.blackRook,
+                  };
+                } else if (col === 1 || col === 6) {
+                  piece = {
+                    type: "knight",
+                    color: "black",
+                    symbol: pieces.blackKnight,
+                  };
+                } else if (col === 2 || col === 5) {
+                  piece = {
+                    type: "bishop",
+                    color: "black",
+                    symbol: pieces.blackBishop,
+                  };
+                } else if (col === 3) {
+                  piece = {
+                    type: "queen",
+                    color: "black",
+                    symbol: pieces.blackQueen,
+                  };
+                } else if (col === 4) {
+                  piece = {
+                    type: "king",
+                    color: "black",
+                    symbol: pieces.blackKing,
+                  };
+                }
+              } else if (row === 7) {
+                if (col === 0 || col === 7) {
+                  piece = {
+                    type: "rook",
+                    color: "white",
+                    symbol: pieces.whiteRook,
+                  };
+                } else if (col === 1 || col === 6) {
+                  piece = {
+                    type: "knight",
+                    color: "white",
+                    symbol: pieces.whiteKnight,
+                  };
+                } else if (col === 2 || col === 5) {
+                  piece = {
+                    type: "bishop",
+                    color: "white",
+                    symbol: pieces.whiteBishop,
+                  };
+                } else if (col === 3) {
+                  piece = {
+                    type: "queen",
+                    color: "white",
+                    symbol: pieces.whiteQueen,
+                  };
+                } else if (col === 4) {
+                  piece = {
+                    type: "king",
+                    color: "white",
+                    symbol: pieces.whiteKing,
+                  };
+                }
+              }
+
+              boardState[row][col] = piece;
+
+              if (piece) {
+                square.textContent = piece.symbol;
+              }
+
+              square.addEventListener("click", handleSquareClick);
+              chessBoard.appendChild(square);
+            }
+          }
+        }
+
+        function handleSquareClick(e) {
+          const row = parseInt(e.target.dataset.row);
+          const col = parseInt(e.target.dataset.col);
+
+          // Clear all highlights
+          document
+            .querySelectorAll(
+              ".chess-square.selected, .chess-square.possible-move"
+            )
+            .forEach((el) => {
+              el.classList.remove("selected", "possible-move");
+            });
+
+          // If no square is selected and we clicked on our piece
+          if (
+            !selectedSquare &&
+            boardState[row][col] &&
+            boardState[row][col].color === currentTurn
+          ) {
+            selectedSquare = { row, col };
+            e.target.classList.add("selected");
+
+            // Show possible moves
+            highlightPossibleMoves(row, col);
+          }
+          // If we have a piece selected and click on a valid move location
+          else if (selectedSquare) {
+            if (isValidMove(selectedSquare.row, selectedSquare.col, row, col)) {
+              // Record the move
+              const fromPiece =
+                boardState[selectedSquare.row][selectedSquare.col];
+              const toPiece = boardState[row][col];
+              moveHistory.push({
+                from: {
+                  row: selectedSquare.row,
+                  col: selectedSquare.col,
+                  piece: fromPiece,
+                },
+                to: { row, col, piece: toPiece },
+                capture: toPiece !== null,
+              });
+
+              // Update move list
+              const moveEntry = document.createElement("li");
+              moveEntry.textContent = `${
+                currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)
+              } ${fromPiece.type} from ${String.fromCharCode(
+                97 + selectedSquare.col
+              )}${8 - selectedSquare.row} to ${String.fromCharCode(97 + col)}${
+                8 - row
+              }${toPiece ? " captures " + toPiece.type : ""}`;
+              moveList.appendChild(moveEntry);
+
+              // Move the piece
+              boardState[row][col] =
+                boardState[selectedSquare.row][selectedSquare.col];
+              boardState[selectedSquare.row][selectedSquare.col] = null;
+
+              // Update display
+              updateBoardDisplay();
+
+              // Toggle turn
+              currentTurn = currentTurn === "white" ? "black" : "white";
+              currentTurnElement.textContent =
+                currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1);
+              selectedSquare = null;
+
+              // Track the move event
+              trackEvent(`Chess move: ${moveEntry.textContent}`);
+            } else if (
+              boardState[row][col] &&
+              boardState[row][col].color === currentTurn
+            ) {
+              // If we click on another of our pieces, select it instead
+              selectedSquare = { row, col };
+              e.target.classList.add("selected");
+              highlightPossibleMoves(row, col);
+            } else {
+              // Invalid move, deselect
+              selectedSquare = null;
+            }
+          }
+        }
+
+        function highlightPossibleMoves(row, col) {
+          const piece = boardState[row][col];
+          if (!piece) return;
+
+          // Very simplified move logic for demo purposes
+          switch (piece.type) {
+            case "pawn":
+              highlightPawnMoves(row, col, piece.color);
+              break;
+            case "rook":
+              highlightRookMoves(row, col);
+              break;
+            case "knight":
+              highlightKnightMoves(row, col);
+              break;
+            case "bishop":
+              highlightBishopMoves(row, col);
+              break;
+            case "queen":
+              highlightRookMoves(row, col);
+              highlightBishopMoves(row, col);
+              break;
+            case "king":
+              highlightKingMoves(row, col);
+              break;
+          }
+        }
+
+        function highlightPawnMoves(row, col, color) {
+          const direction = color === "white" ? -1 : 1;
+          const startingRow = color === "white" ? 6 : 1;
+
+          // Forward move
+          if (
+            inBounds(row + direction, col) &&
+            !boardState[row + direction][col]
+          ) {
+            highlightSquare(row + direction, col);
+
+            // Double move from starting position
+            if (row === startingRow && !boardState[row + 2 * direction][col]) {
+              highlightSquare(row + 2 * direction, col);
+            }
+          }
+
+          // Captures
+          for (let captureCol of [col - 1, col + 1]) {
+            if (
+              inBounds(row + direction, captureCol) &&
+              boardState[row + direction][captureCol] &&
+              boardState[row + direction][captureCol].color !== color
+            ) {
+              highlightSquare(row + direction, captureCol);
+            }
+          }
+        }
+
+        function highlightRookMoves(row, col) {
+          const directions = [
+            [-1, 0],
+            [1, 0],
+            [0, -1],
+            [0, 1],
+          ];
+          highlightLinearMoves(row, col, directions);
+        }
+
+        function highlightBishopMoves(row, col) {
+          const directions = [
+            [-1, -1],
+            [-1, 1],
+            [1, -1],
+            [1, 1],
+          ];
+          highlightLinearMoves(row, col, directions);
+        }
+
+        function highlightKnightMoves(row, col) {
+          const moves = [
+            [-2, -1],
+            [-2, 1],
+            [-1, -2],
+            [-1, 2],
+            [1, -2],
+            [1, 2],
+            [2, -1],
+            [2, 1],
+          ];
+
+          for (const [dRow, dCol] of moves) {
+            const newRow = row + dRow;
+            const newCol = col + dCol;
+
+            if (
+              inBounds(newRow, newCol) &&
+              (!boardState[newRow][newCol] ||
+                boardState[newRow][newCol].color !== boardState[row][col].color)
+            ) {
+              highlightSquare(newRow, newCol);
+            }
+          }
+        }
+
+        function highlightKingMoves(row, col) {
+          for (let dRow = -1; dRow <= 1; dRow++) {
+            for (let dCol = -1; dCol <= 1; dCol++) {
+              if (dRow === 0 && dCol === 0) continue;
+
+              const newRow = row + dRow;
+              const newCol = col + dCol;
+
+              if (
+                inBounds(newRow, newCol) &&
+                (!boardState[newRow][newCol] ||
+                  boardState[newRow][newCol].color !==
+                    boardState[row][col].color)
+              ) {
+                highlightSquare(newRow, newCol);
+              }
+            }
+          }
+        }
+
+        function highlightLinearMoves(row, col, directions) {
+          const piece = boardState[row][col];
+
+          for (const [dRow, dCol] of directions) {
+            let newRow = row + dRow;
+            let newCol = col + dCol;
+
+            while (inBounds(newRow, newCol)) {
+              if (!boardState[newRow][newCol]) {
+                highlightSquare(newRow, newCol);
+              } else if (boardState[newRow][newCol].color !== piece.color) {
+                highlightSquare(newRow, newCol);
+                break;
+              } else {
+                break;
+              }
+
+              newRow += dRow;
+              newCol += dCol;
+            }
+          }
+        }
+
+        function highlightSquare(row, col) {
+          const square = document.querySelector(
+            `.chess-square[data-row="${row}"][data-col="${col}"]`
+          );
+          if (square) {
+            square.classList.add("possible-move");
+          }
+        }
+
+        function inBounds(row, col) {
+          return row >= 0 && row < 8 && col >= 0 && col < 8;
+        }
+
+        function isValidMove(fromRow, fromCol, toRow, toCol) {
+          // For simplicity, we'll check if the target square is highlighted as a possible move
+          const targetSquare = document.querySelector(
+            `.chess-square[data-row="${toRow}"][data-col="${toCol}"]`
+          );
+          return (
+            targetSquare && targetSquare.classList.contains("possible-move")
+          );
+        }
+
+        function updateBoardDisplay() {
+          for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+              const square = document.querySelector(
+                `.chess-square[data-row="${row}"][data-col="${col}"]`
+              );
+              const piece = boardState[row][col];
+              square.textContent = piece ? piece.symbol : "";
+            }
+          }
+        }
+
+        document.getElementById("reset-game").addEventListener("click", () => {
+          initializeBoard();
+          currentTurn = "white";
+          currentTurnElement.textContent = "White";
+          selectedSquare = null;
+          moveHistory = [];
+          moveList.innerHTML = "";
+          trackEvent("Game reset");
+        });
+
+        document.getElementById("undo-move").addEventListener("click", () => {
+          if (moveHistory.length > 0) {
+            const lastMove = moveHistory.pop();
+
+            // Restore the piece to its original position
+            boardState[lastMove.from.row][lastMove.from.col] =
+              lastMove.from.piece;
+            boardState[lastMove.to.row][lastMove.to.col] = lastMove.to.piece;
+
+            // Update display
+            updateBoardDisplay();
+
+            // Revert turn
+            currentTurn = currentTurn === "white" ? "black" : "white";
+            currentTurnElement.textContent =
+              currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1);
+
+            // Remove last move from list
+            if (moveList.lastChild) {
+              moveList.removeChild(moveList.lastChild);
+            }
+
+            trackEvent("Move undone");
+          }
+        });
+
+        // Initialize the board
+        initializeBoard();
+        trackEvent("Chess board initialized");
+      });
+    </script>
+
+    <script src="body-script.js" onload="trackBodyScriptLoaded()"></script>
+  </body>
+</html>

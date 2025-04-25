@@ -3,176 +3,571 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Loading Sequence Timeline</title>
+    <title>How Web Page Renders</title>
 
     <script>
-      // Array to store all loading events
+      console.log("Inline head script executed at", new Date().toISOString());
       const loadingEvents = [];
-      
-      // Function to add event to the table
+
       function addEventToTable(eventName, timestamp) {
-        // Add to our events array
         loadingEvents.push({ name: eventName, time: timestamp });
-        
-        // Sort events by timestamp
         loadingEvents.sort((a, b) => new Date(a.time) - new Date(b.time));
-        
-        // Get the table element
-        const table = document.getElementById('events-table');
-        
-        // Clear existing table content
+        const table = document.getElementById("events-table");
         table.innerHTML = `
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Event</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody>
-          </tbody>
-        `;
-        
-        // Get tbody
-        const tbody = table.querySelector('tbody');
-        
-        // Add all events to the table in sequence
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Event</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+        const tbody = table.querySelector("tbody");
         loadingEvents.forEach((event, index) => {
-          const row = document.createElement('tr');
+          const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${event.name}</td>
-            <td>${event.time}</td>
-          `;
+          <td>${index + 1}</td>
+          <td>${event.name}</td>
+          <td>${event.time}</td>
+        `;
           tbody.appendChild(row);
         });
       }
 
-      // Function to track loading events
+      function trackEvent(name) {
+        const mark = `${name}-mark`;
+        performance.mark(mark);
+        const timestamp = new Date().toISOString();
+        addEventToTable(name, timestamp);
+      }
+
+      function logLinkElements() {
+        const links = document.querySelectorAll("link");
+        const table = document.getElementById("links-table");
+        const descriptions = {
+          stylesheet: "CSS to style the page",
+          preconnect: "Establish early connection",
+          "dns-prefetch":
+            "Pre-resolve DNS hostnames for assets later in the page!",
+          preload: "Fetch resource before use",
+          prefetch: "Prefetch asset for a future navigation, place in cache",
+          prerender: "Render future page in background for future navigation",
+          alternate: "Alternate format (e.g. RSS)",
+        };
+
+        table.innerHTML = `
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>rel</th>
+            <th>href</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+        const tbody = table.querySelector("tbody");
+        links.forEach((link, index) => {
+          const rel = link.getAttribute("rel");
+          const desc = descriptions[rel] || "Custom or unknown use";
+          const row = document.createElement("tr");
+          row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${rel}</td>
+          <td>${link.href}</td>
+          <td>${desc}</td>
+        `;
+          tbody.appendChild(row);
+        });
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        trackEvent("DOMContentLoaded");
+        logLinkElements();
+      });
+
+      window.addEventListener("load", () => {
+        trackEvent("Window Load");
+      });
+
       function trackFontLoaded() {
-        const timestamp = new Date().toISOString();
-        addEventToTable("Font loaded", timestamp);
+        trackEvent("Font loaded");
       }
-
       function trackReactLoaded() {
-        const timestamp = new Date().toISOString();
-        addEventToTable("React loaded", timestamp);
+        trackEvent("React loaded");
       }
-
       function trackMaterialUiLoaded() {
-        const timestamp = new Date().toISOString();
-        addEventToTable("Material-UI loaded", timestamp);
+        trackEvent("Material-UI loaded");
       }
-
       function trackExternalStylesheetLoaded() {
-        const timestamp = new Date().toISOString();
-        addEventToTable("External stylesheet loaded", timestamp);
+        trackEvent("External stylesheet loaded");
       }
-      
       function trackHeadScriptLoaded() {
-        const timestamp = new Date().toISOString();
-        addEventToTable("Head script loaded", timestamp);
+        trackEvent("Head script loaded");
       }
-      
       function trackBodyScriptLoaded() {
-        const timestamp = new Date().toISOString();
-        addEventToTable("Body script loaded", timestamp);
+        trackEvent("Body script loaded");
       }
     </script>
 
-    <!-- Google Fonts -->
+    <!-- Example <link> elements -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+      href="styles.css"
+      onload="trackExternalStylesheetLoaded()"
+    />
+    <link rel="preload" href="styles.css" as="style" />
+    <link rel="prefetch" href="something.html" />
+    <link rel="prerender" href="sequence.html" />
+    <link
+      rel="alternate"
+      href="rss.xml"
+      type="application/rss+xml"
+      title="RSS"
+    />
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
       rel="stylesheet"
       onload="trackFontLoaded()"
     />
 
-    <!-- React script with defer attribute -->
+    <!-- Scripts -->
     <script
+      async
       crossorigin
       src="https://unpkg.com/react@18/umd/react.development.js"
       onload="trackReactLoaded()"
     ></script>
-
-    <!-- Material-UI script with async attribute -->
     <script
-      
       src="https://unpkg.com/@material-ui/core@latest/umd/material-ui.development.js"
       onload="trackMaterialUiLoaded()"
     ></script>
+    <script src="head-script.js" onload="trackHeadScriptLoaded()"></script>
 
-    <!-- Inline CSS in head -->
+    <!-- CSS -->
     <style>
       body {
         font-family: "Inter", Arial, sans-serif;
+        background: #f0f0f0;
         margin: 20px;
-        background-color: #f0f0f0;
-        color: #333;
-        line-height: 1.6;
       }
 
       .container {
         max-width: 1000px;
-        margin: 0 auto;
-        padding: 20px;
+        margin: auto;
       }
 
       h1 {
         text-align: center;
-        color: #333;
-        margin-bottom: 30px;
       }
 
       section {
-        background-color: white;
+        background: white;
         border-radius: 8px;
         padding: 20px;
-        margin-bottom: 30px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       }
 
-      h2 {
-        margin-top: 0;
-        border-bottom: 2px solid #eee;
-        padding-bottom: 10px;
-        color: #444;
+      table {
+        width: 100%;
+        border-collapse: collapse;
       }
-    
+
+      th,
+      td {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f5f5f5;
+      }
+
+      code {
+        background: #f1f3f4;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      .side-note {
+        background: #e7f3fe;
+        border-left: 6px solid #2196f3;
+        padding: 10px;
+        margin: 20px 0;
+      }
     </style>
-
-    <!-- External CSS file -->
-    <link rel="stylesheet" href="styles.css" onload="trackExternalStylesheetLoaded()"/>
-
-    <!-- External JS in head -->
-    <script src="head-script.js" onload="trackHeadScriptLoaded()"></script>
-
-    
   </head>
+
   <body>
     <div class="container">
-      <h1>HTML, CSS, and JavaScript Loading Sequence Timeline</h1>
+      <h1>How Web Page Renders</h1>
 
-      <section id="events-table-section">
-        
-        <p>A chronological list of all loading events with precise timing:</p>
-
-        <table id="events-table">
-          <!-- Events table will be rendered here -->
-        </table>
+      <section>
+        <h2>1. Event Timeline</h2>
+        <table id="events-table"></table>
       </section>
 
-    
+      <section>
+        <div>
+          <a href="./sequence.html">pre-rendered sequence.html</a>
+        </div>
+      </section>
 
-      
+      <section>
+        <h2>2. All Link Tags</h2>
+        <table id="links-table"></table>
+      </section>
 
-    <!-- Inline script in body -->
+      <section>
+        <h2>Critical Rendering Path</h2>
+        <p>
+          The browser needs to know what the minimum number of resources it
+          should wait for in order to avoid presenting an obviously broken
+          experience. On the other hand, the browser also shouldn't wait longer
+          than necessary before presenting the user with some content. The
+          sequence of steps the browser takes before performing that initial
+          render is known as the <strong>critical rendering path.</strong>
+        </p>
+
+        <p>
+          What resources are on the critical rendering path? The browser needs
+          to wait for some critical resources to download before it can complete
+          the initial render. These resources include: Part of the HTML.
+          Render-blocking CSS in the
+          <code translate="no" dir="ltr">&lt;head&gt;</code> element.
+          Render-blocking JavaScript in the
+          <code translate="no" dir="ltr">&lt;head&gt;</code> element.
+        </p>
+
+        <p>
+          Importantly, for the initial render, the browser will not typically
+          wait for:
+        </p>
+
+        <ul>
+          <li>All of the HTML.</li>
+          <li>Fonts.</li>
+          <li>Images</li>
+          <li>
+            Non-render-blocking JavaScript outside of the
+            <code translate="no" dir="ltr">&lt;head&gt;</code> element (for
+            example, <em>script</em> elements placed at the end of the HTML).
+          </li>
+          <li>
+            Non-render-blocking CSS outside of the
+            <code translate="no" dir="ltr">&lt;head&gt;</code> element, or CSS
+            with a <em>media</em> attribute value that does not apply to the
+            current viewport.
+          </li>
+        </ul>
+
+        <p>
+          Fonts and images are often regarded by the browser as content that to
+          be filled in during subsequent page rerenders, so they don't need to
+          hold up the initial render. This can, however, mean that areas of
+          blank space are left in the initial render while text is hidden
+          waiting on fonts, or until images are available. Worse still is when
+          sufficient space is not reserved for certain types of
+          content—particularly when image dimensions are not provided in the
+          HTML—the page's layout can shift when this content loads later on.
+          This aspect of the user experience is measured by the
+          <em>Cumulative Layout Shift (CLS)</em> metric.
+        </p>
+
+        <p>
+          The <code translate="no" dir="ltr">&lt;head&gt;</code> element is key
+          to processing the critical rendering path. So much so that the next
+          section covers it in some detail. Optimizing the
+          <code translate="no" dir="ltr">&lt;head&gt;</code> element's contents
+          is a key aspect of web performance. To understand the critical
+          rendering path for now, though, you only need to know that the
+          <code translate="no" dir="ltr">&lt;head&gt;</code> element contains
+          metadata about the page and its resources, but no actual content the
+          user can see. Visible content is contained within the
+          <em>body</em> element that follows the
+          <code translate="no" dir="ltr">&lt;head&gt;</code> element. Before the
+          browser can render any content, it needs both the content to render as
+          well as the metadata about how to render it.
+        </p>
+
+        <p>
+          However, not all resources referenced in the
+          <code translate="no" dir="ltr">&lt;head&gt;</code> element are
+          strictly necessary for the initial page render, so the browser only
+          waits for those that are. To identify which resources are in the
+          critical rendering path, you need to understand
+          <em>render-blocking</em> and <em>parser-blocking</em> CSS and
+          JavaScript.
+        </p>
+
+        <h3>Render-blocking resources</h3>
+        <p>
+          Some resources are deemed so critical that the browser pauses page
+          rendering until it has dealt with them. CSS falls into this category
+          by default.
+        </p>
+
+        <p>
+          When a browser sees CSS—whether it's inline CSS in a
+          <code translate="no" dir="ltr">&lt;style&gt;</code> element, or an
+          externally referenced resource specified by a
+          <code translate="no" dir="ltr"
+            >&lt;link rel=stylesheet href="..."&gt;</code
+          >
+          element—the browser avoids rendering any more content until it has
+          completed downloading and processing that CSS.
+        </p>
+
+        <aside class="side-note">
+          <strong>Note:</strong>&nbsp;Although CSS is render-blocking by
+          default, it can be turned into a non-render-blocking resource by
+          changing the
+          <code translate="no" dir="ltr">&lt;link&gt;</code> element's
+          <code translate="no" dir="ltr">media</code>
+          attribute to specify a value that doesn't match the current
+          conditions:
+          <code translate="no" dir="ltr"
+            >&lt;link rel=stylesheet href="..." media=print&gt;</code
+          >.
+          <a
+            href="https://www.filamentgroup.com/lab/load-css-simpler/"
+            rel="noopener"
+            >This has been used in the past</a
+          >
+          to allow non-critical CSS to load in a non-render blocking fashion.
+        </aside>
+
+        <br />
+
+        <aside class="side-note">
+          <b>Note: </b> Scripts loaded from
+          <code translate="no" dir="ltr">&lt;script&gt;</code> elements with a
+          <a
+            href="https://developer.mozilla.org/docs/Web/JavaScript/Guide/Modules#applying_the_module_to_your_html"
+            ><code translate="no" dir="ltr">type=module</code> attribute</a
+          >
+          are deferred by default.
+        </aside>
+
+        <p>
+          Just because a resource blocks rendering does not necessarily mean it
+          stops the browser from doing anything else. Browsers try to be as
+          efficient as possible, so when a browser sees it needs to download a
+          CSS resource, it will request it and pause <em>rendering</em>, but
+          will still carry on <em>processing</em> the rest of the HTML and look
+          for other work to do in the meantime.
+        </p>
+
+        <p>
+          For the critical render-blocking path, we're typically interested in
+          render-blocking resources in the
+          <code translate="no" dir="ltr">&lt;head&gt;</code>, as they
+          effectively block rendering of the entire page
+        </p>
+
+        <p>
+          A more recent innovation is the
+          <a
+            href="https://html.spec.whatwg.org/multipage/urls-and-fetching.html#blocking-attributes"
+            ><code translate="no" dir="ltr">blocking=render</code> attribute</a
+          >,
+          <a href="https://chromestatus.com/feature/5452774595624960"
+            >added to Chrome 105</a
+          >. This allows developers to explicitly mark a
+          <code translate="no" dir="ltr">&lt;link&gt;</code>,
+          <code translate="no" dir="ltr">&lt;script&gt;</code> or
+          <code translate="no" dir="ltr">&lt;style&gt;</code> element as
+          rendering-blocking until the element is processed, but still allowing
+          the parser to continue processing the document in the meantime.
+        </p>
+
+        <h3>Parser-blocking resources</h3>
+        <p>
+          Parser-blocking resources are those that prevent the browser from
+          looking for other work to do by continuing to parse the HTML.
+          JavaScript by default is parser-blocking (unless specifically marked
+          as
+          <a
+            href="https://developer.mozilla.org/docs/Web/HTML/Element/script#async"
+            >asynchronous</a
+          >
+          or
+          <a
+            href="https://developer.mozilla.org/docs/Web/HTML/Element/script#defer"
+            >deferred</a
+          >), as JavaScript can change the DOM or the CSSOM upon its execution.
+          Therefore, it's not possible for the browser to continue processing
+          other resources until it knows the full impact of the requested
+          JavaScript on a page's HTML. Synchronous JavaScript therefore blocks
+          the parser.
+        </p>
+
+        <p>
+          Parser-blocking resources are effectively render-blocking as well.
+          Since the parser can't continue past a parsing-blocking resource until
+          it has been fully processed, it can't access and render the content
+          after it. The browser can render any HTML received so far while it
+          waits, but where the critical rendering path is concerned, any
+          parser-blocking resources in the
+          <code translate="no" dir="ltr">&lt;head&gt;</code> effectively mean
+          that all page content is blocked from being rendered.
+        </p>
+
+        <p>
+          Blocking the parser can have a huge performance cost—much more than
+          just blocking rendering. For this reason, browsers will try to reduce
+          this cost by using a secondary HTML parser known as the
+          <a href="/articles/preload-scanner">preload scanner</a> to download
+          upcoming resources while the primary HTML parser is blocked. While not
+          as good as actually parsing the HTML, it does at least allow the
+          networking functions in the browser to work ahead of the blocked
+          parser, meaning it will be less likely to be blocked again in the
+          future.
+        </p>
+
+        <p>
+          Note: Without atleast one of the attributes, <em>defer</em> or
+          <em>async</em> present, a
+          <code translate="no" dir="ltr">&lt;script&gt;</code> is
+          parser-blocking and render blocking.
+        </p>
+      </section>
+
+      <section>
+        <h2>Prefetch resources</h2>
+
+        <p>
+          Inside the <code translate="no" dir="ltr">head</code> tag, there is a
+          <code translate="no" dir="ltr">link</code> element
+          <code translate="no" dir="ltr"
+            >&lt;link rel="prefetch" href="something.html" /&gt;</code
+          >
+        </p>
+        <p>
+          This prefetches the <code translate="no" dir="ltr">something.html</code>
+          page and all its subresources. The browser will not block rendering
+          while it prefetches this resource, but it will be available in the
+          cache when the user navigates to it.
+        </p>
+
+        <p>
+          This can be verified by checking the network tab in the developer
+          tools of the browser. The
+          <code translate="no" dir="ltr">something.html</code>
+          page will be listed.
+        </p>
+
+        <div>
+          <a href="./something.html">pre-fetched something.html</a>
+        </div>
+
+        <p>
+          It's possible to preemptively fetch
+          <a
+            href="https://developer.mozilla.org/docs/Web/HTML/Element/link#attributes"
+            >resources</a
+          >—including images, stylesheets, or JavaScript resources—by using the
+          <code translate="no" dir="ltr">&lt;link rel="prefetch"&gt;</code>
+          resource hint. The <code translate="no" dir="ltr">prefetch</code> hint
+          informs the browser that a resource is likely to be required in the
+          near future.
+        </p>
+
+        <p>
+          When a <code translate="no" dir="ltr">prefetch</code> hint is
+          specified, the browser may then initiate a request for that resource
+          at lowest priority to avoid contending with resources required for the
+          current page.
+        </p>
+
+        <p>
+          It's also possible to prefetch a page and all its subresources by
+          specifying the
+          <code translate="no" dir="ltr">as="document"</code> attribute when
+          pointing to an HTML document:
+        </p>
+
+        <code translate="no" dir="ltr"
+          >&lt;link rel="prefetch" href="/page" as="document" &gt;</code
+        >
+
+        <br />
+      </section>
+
+      <section>
+        <h2>Prerender resources</h2>
+
+        <p>
+          In addition to prefetching resources, it is also possible to hint to
+          the browser to
+          <a href="https://developer.chrome.com/blog/prerender-pages/"
+            >prerender a page before the user navigates to it</a
+          >. This can deliver nearly instant page loads, as the page and its
+          resources are fetched and processed in the background. Once the user
+          navigates to the page, the page is placed in the foreground.
+        </p>
+
+        <aside class="side-note">
+          <strong>Important:</strong>&nbsp;A full prerender also executes the
+          JavaScript on the page that is being prerendered. Given that
+          JavaScript can be both a fairly large and computationally expensive
+          type of resource, it's recommended to use `prerender` sparingly, and
+          only in cases when you're fairly certain that the user intends to
+          navigate to the prerendered page.
+        </aside>
+      </section>
+
+      <section>
+        <h2>References:</h2>
+        <ol>
+          <li>
+            <a
+              href="https://web.dev/learn/performance/understanding-the-critical-path"
+              rel="noopener noreferrer"
+              target="_blank"
+              >Understanding the critical path</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://web.dev/articles/preload-scanner"
+              rel="noopener noreferrer"
+              target="_blank"
+              >Preload Scanner</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://web.dev/learn/performance/prefetching-prerendering-precaching"
+              rel="noopener noreferrer"
+              target="_blank"
+              >Prefetching, Prerendering, Precaching</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://docs.google.com/presentation/d/18zlAdKAxnc51y_kj-6sWLmnjl6TLnaru_WH0LJTjP-o/present?slide=id.p19"
+              rel="noopener noreferrer"
+              target="_blank"
+              >Presentation: Preconnect, prefetch, prerender...</a
+            >
+          </li>
+        </ol>
+      </section>
+    </div>
+
     <script>
-      console.log("Inline body script executed - " + new Date().toISOString());
+      console.log("Inline body script executed at", new Date().toISOString());
     </script>
 
-    <!-- External script at end of body -->
     <script src="body-script.js" onload="trackBodyScriptLoaded()"></script>
   </body>
 </html>
