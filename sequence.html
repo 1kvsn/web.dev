@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading Sequence Timeline</title>
+
+    <!-- Track Google Font loading start time -->
+    <script>
+      console.log("Before Google Fonts loading - " + new Date().toISOString());
+      window.fontLoadingStartTime = new Date();
+
+      // Create global object to track script loading times
+      window.scriptTimings = {};
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+      onload="trackFontLoaded()"
+    />
+
+    <!-- Track React script with defer attribute - track start time -->
+    <script>
+      console.log("Before React script loading - " + new Date().toISOString());
+      window.scriptTimings.reactStart = new Date();
+    </script>
+
+    <!-- React script with defer attribute -->
+    <script
+      defer
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      onload="trackReactLoaded()"
+    ></script>
+
+    <!-- Track Material-UI script with async attribute - track start time -->
+    <script>
+      console.log(
+        "Before Material-UI script loading - " + new Date().toISOString()
+      );
+      window.scriptTimings.materialUiStart = new Date();
+    </script>
+
+    <!-- Material-UI script with async attribute -->
+    <script
+      async
+      src="https://unpkg.com/@material-ui/core@latest/umd/material-ui.development.js"
+      onload="trackMaterialUiLoaded()"
+    ></script>
+
+    <!-- Track when scripts finish loading -->
+    <script>
+      function trackReactLoaded() {
+        var loadTime = new Date() - window.scriptTimings.reactStart;
+        console.log(
+          "React script loaded (defer) - " +
+            new Date().toISOString() +
+            " (took " +
+            loadTime +
+            "ms)"
+        );
+        window.scriptTimings.reactEnd = new Date();
+        window.scriptTimings.reactLoadTime = loadTime;
+
+        updateTimelineWhenReady(
+          "React script loaded (defer)",
+          "Script loading completed in " + loadTime + "ms"
+        );
+        updateScriptStatusWhenReady(
+          "react-loading",
+          "React script loaded (defer)",
+          "#e8f4ff",
+          loadTime
+        );
+      }
+
+      function trackMaterialUiLoaded() {
+        var loadTime = new Date() - window.scriptTimings.materialUiStart;
+        console.log(
+          "Material-UI script loaded (async) - " +
+            new Date().toISOString() +
+            " (took " +
+            loadTime +
+            "ms)"
+        );
+        window.scriptTimings.materialUiEnd = new Date();
+        window.scriptTimings.materialUiLoadTime = loadTime;
+
+        updateTimelineWhenReady(
+          "Material-UI script loaded (async)",
+          "Script loading completed in " + loadTime + "ms"
+        );
+        updateScriptStatusWhenReady(
+          "material-ui-loading",
+          "Material-UI script loaded (async)",
+          "#fff8e8",
+          loadTime
+        );
+      }
+
+      function updateTimelineWhenReady(title, description) {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", function () {
+            addToTimeline(title, description);
+          });
+        } else {
+          addToTimeline(title, description);
+        }
+      }
+
+      function addToTimeline(title, description) {
+        var timeline = document.getElementById("timeline");
+        if (timeline) {
+          timeline.innerHTML += createTimelineItem(title, description);
+        }
+      }
+
+      function updateScriptStatusWhenReady(elementId, text, color, loadTime) {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", function () {
+            updateScriptStatus(elementId, text, color, loadTime);
+          });
+        } else {
+          updateScriptStatus(elementId, text, color, loadTime);
+        }
+      }
+
+      function updateScriptStatus(elementId, text, color, loadTime) {
+        var element = document.getElementById(elementId);
+        if (element) {
+          element.style.backgroundColor = color;
+          element.innerHTML = text + "<br>Load time: " + loadTime + "ms";
+        }
+      }
+
+      // Track font loaded
+      function trackFontLoaded() {
+        var loadTime = new Date() - window.fontLoadingStartTime;
+        console.log(
+          "Google Fonts loaded - " +
+            new Date().toISOString() +
+            " (took " +
+            loadTime +
+            "ms)"
+        );
+
+        // We'll update the timeline when DOM is ready
+        document.addEventListener("DOMContentLoaded", function () {
+          var timeline = document.getElementById("timeline");
+          if (timeline) {
+            timeline.innerHTML += createTimelineItem(
+              "Google Fonts loaded",
+              "Font loading completed in " + loadTime + "ms"
+            );
+
+            // Add a visual element showing the loaded font
+            var fontDemo = document.createElement("div");
+            fontDemo.id = "font-demo";
+            fontDemo.innerHTML = `
+                        <div style="font-family: 'Roboto', sans-serif; padding: 10px; background-color: #e9f5ff; border-radius: 5px; margin-top: 15px;">
+                            <p style="font-weight: 300;">This text is in Roboto Light</p>
+                            <p style="font-weight: 700;">This text is in Roboto Bold</p>
+                        </div>
+                        <div style="font-family: 'Inter', sans-serif; padding: 10px; background-color: #fff0e9; border-radius: 5px; margin-top: 10px;">
+                            <p style="font-weight: 300;">This text is in Inter Light</p>
+                            <p style="font-weight: 700;">This text is in Inter Bold</p>
+                        </div>
+                    `;
+            document
+              .getElementById("loading-visualization")
+              .appendChild(fontDemo);
+          }
+        });
+      }
+    </script>
+
+    <!-- Inline CSS in head -->
+    <style>
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        margin: 20px;
+        background-color: #f0f0f0;
+      }
+      .timeline {
+        position: relative;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .timeline-item {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border-left: 4px solid #4caf50;
+        background-color: white;
+      }
+      .event-time {
+        font-weight: bold;
+        color: #555;
+      }
+      .event-description {
+        margin-top: 5px;
+      }
+      #loading-visualization {
+        margin: 20px auto;
+        width: 100%;
+        max-width: 800px;
+        height: auto;
+        min-height: 300px;
+        border: 1px solid #ccc;
+        position: relative;
+        overflow: hidden;
+        background-color: #f9f9f9;
+        padding-bottom: 20px;
+      }
+    </style>
+
+    <!-- External CSS file -->
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Script in head - No DOMContentLoaded -->
+    <script>
+      console.log("Head script executed - " + new Date().toISOString());
+      // This will fail if DOM is not ready yet
+      try {
+        var headElement = document.getElementById("head-direct");
+        if (headElement) {
+          headElement.style.backgroundColor = "#ffcccc";
+          headElement.textContent =
+            "Modified by head script without DOMContentLoaded";
+        } else {
+          console.log("DOM element not available yet in head script");
+        }
+      } catch (e) {
+        console.error("Error in head script:", e);
+      }
+    </script>
+
+    <!-- Script in head with DOMContentLoaded -->
+    <script>
+      console.log(
+        "Head script with DOMContentLoaded registered - " +
+          new Date().toISOString()
+      );
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOMContentLoaded fired - " + new Date().toISOString());
+        var timeline = document.getElementById("timeline");
+        timeline.innerHTML += createTimelineItem(
+          "DOMContentLoaded event fired",
+          "Browser has parsed the HTML and created the DOM tree"
+        );
+
+        document.getElementById("head-with-domloaded").style.backgroundColor =
+          "#ccffcc";
+        document.getElementById("head-with-domloaded").textContent =
+          "Modified by script in head with DOMContentLoaded";
+      });
+    </script>
+
+    <!-- External JS in head -->
+    <script src="head-script.js"></script>
+  </head>
+  <body>
+    <h1>HTML, CSS, and JavaScript Loading Sequence Timeline</h1>
+
+    <div id="loading-visualization">
+      <div style="padding: 10px">Loading indicators will appear here</div>
+      <div id="head-direct" class="timeline-item">
+        This should not be modified until DOM is ready
+      </div>
+      <div id="head-with-domloaded" class="timeline-item">
+        Waiting for head script with DOMContentLoaded
+      </div>
+      <div id="external-head" class="timeline-item">
+        Waiting for external head script
+      </div>
+      <div id="body-inline" class="timeline-item">
+        Waiting for inline body script
+      </div>
+      <div id="body-external" class="timeline-item">
+        Waiting for external body script
+      </div>
+      <div id="font-loading" class="timeline-item">
+        Monitoring Google Font loading...
+      </div>
+      <div id="react-loading" class="timeline-item">
+        Monitoring React script loading (defer)...
+      </div>
+      <div id="material-ui-loading" class="timeline-item">
+        Monitoring Material-UI script loading (async)...
+      </div>
+    </div>
+
+    <div class="timeline" id="timeline">
+      <h2>Event Timeline</h2>
+    </div>
+
+    <!-- Compare async vs defer -->
+    <div class="timeline" id="script-comparison">
+      <h2>Async vs Defer Script Loading</h2>
+      <div class="timeline-item">
+        <div class="event-description">
+          <p>
+            <strong>async script</strong> (Material-UI): Downloads
+            asynchronously and executes as soon as it's available, possibly
+            before the DOM is fully loaded.
+          </p>
+          <p>
+            <strong>defer script</strong> (React): Downloads asynchronously but
+            waits to execute until after the DOM is fully parsed (just before
+            DOMContentLoaded).
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline script in body -->
+    <script>
+      console.log("Inline body script executed - " + new Date().toISOString());
+      var timeline = document.getElementById("timeline");
+      timeline.innerHTML += createTimelineItem(
+        "Inline body script",
+        "Executed as soon as browser reached this point in parsing"
+      );
+
+      document.getElementById("body-inline").style.backgroundColor = "#ccccff";
+      document.getElementById("body-inline").textContent =
+        "Modified by inline body script";
+
+      function createTimelineItem(title, description) {
+        var time =
+          new Date().toLocaleTimeString() + "." + new Date().getMilliseconds();
+        return `
+                <div class="timeline-item">
+                    <div class="event-time">${title} - ${time}</div>
+                    <div class="event-description">${description}</div>
+                </div>
+            `;
+      }
+    </script>
+
+    <!-- External script at end of body -->
+    <script src="body-script.js"></script>
+
+    <script>
+      // This runs at the very end
+      window.addEventListener("load", function () {
+        console.log("Window load event fired - " + new Date().toISOString());
+        var timeline = document.getElementById("timeline");
+        timeline.innerHTML += createTimelineItem(
+          "window.onload event",
+          "All resources (images, styles, scripts, etc.) have finished loading"
+        );
+
+        // Update the font loading status one more time with final confirmation
+        document.getElementById("font-loading").style.backgroundColor =
+          "#e6ffe6";
+        document.getElementById("font-loading").innerHTML =
+          "Google Fonts fully loaded and applied.<br>" +
+          "Started at: " +
+          window.fontLoadingStartTime.toLocaleTimeString() +
+          "." +
+          window.fontLoadingStartTime.getMilliseconds() +
+          "<br>" +
+          "Completed by window.onload event.";
+
+        // Create summary section for script loading
+        var summary = document.createElement("div");
+        summary.className = "timeline-item";
+        summary.style.backgroundColor = "#f0f8ff";
+        summary.style.marginTop = "20px";
+
+        var content = "<h3>Script Loading Summary:</h3>";
+
+        if (window.scriptTimings.reactLoadTime) {
+          content +=
+            "<p><strong>React (defer)</strong>: " +
+            window.scriptTimings.reactLoadTime +
+            "ms</p>";
+        } else {
+          content += "<p><strong>React (defer)</strong>: Not completed yet</p>";
+        }
+
+        if (window.scriptTimings.materialUiLoadTime) {
+          content +=
+            "<p><strong>Material-UI (async)</strong>: " +
+            window.scriptTimings.materialUiLoadTime +
+            "ms</p>";
+        } else {
+          content +=
+            "<p><strong>Material-UI (async)</strong>: Not completed yet</p>";
+        }
+
+        summary.innerHTML = content;
+        document.getElementById("script-comparison").appendChild(summary);
+      });
+    </script>
+  </body>
+</html>
